@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.DS_Store
+*.pyc
+
+# weights and audio downloaded or trained later
+**/*.onnx
+**/*.safetensors
+**/*.bin
+**/adapters/
+**/voices/
+rag/data/index/
+**/data/jobs/
+
+# mic recordings; the small fixture wavs can still be committed
+voice/samples/mic-*.wav
