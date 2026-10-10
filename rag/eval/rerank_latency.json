@@ -1,0 +1,5 @@
+{
+  "pairs": 18,
+  "rerank_ms_p50": 75.2568,
+  "model": "cross-encoder/ms-marco-MiniLM-L-6-v2"
+}

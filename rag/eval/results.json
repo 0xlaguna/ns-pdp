@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-10-12T16:27:51-06:00",
+  "command": "/Users/Maykol/ns-pdp/evidence/rag/.venv/bin/python eval/run_eval.py",
+  "n": 8,
+  "systems": {
+    "dense": {
+      "recall_at_5": 0.875,
+      "mrr": 0.71875,
+      "n": 8
+    },
+    "bm25": {
+      "recall_at_5": 0.75,
+      "mrr": 0.6875,
+      "n": 8
+    },
+    "hybrid": {
+      "recall_at_5": 1.0,
+      "mrr": 0.739583,
+      "n": 8
+    },
+    "hybrid_rerank": {
+      "recall_at_5": 1.0,
+      "mrr": 0.791667,
+      "n": 8
+    }
+  }
+}

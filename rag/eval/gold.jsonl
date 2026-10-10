@@ -1,0 +1,8 @@
+{"query": "How does a bi-encoder differ from a cross-encoder?", "relevant_ids": ["retrieval-notes:1"]}
+{"query": "Why does the cross-encoder skip the full corpus?", "relevant_ids": ["retrieval-notes:3"]}
+{"query": "What is the mlx_lm.lora command?", "relevant_ids": ["mlx-lora-notes:0"]}
+{"query": "Which jsonl files does training expect?", "relevant_ids": ["mlx-lora-notes:2"]}
+{"query": "When is training QLoRA?", "relevant_ids": ["mlx-lora-notes:1"]}
+{"query": "What is the search route?", "relevant_ids": ["fieldguide-runbook:0"]}
+{"query": "How long should an assistant answer be?", "relevant_ids": ["fieldguide-runbook:1"]}
+{"query": "What does reciprocal rank fusion's k do?", "relevant_ids": ["fieldguide-runbook:3"]}
