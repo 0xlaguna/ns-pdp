@@ -1,0 +1,10 @@
+{
+  "first_step": 10,
+  "last_step": 200,
+  "first_train_loss": 3.373,
+  "last_train_loss": 0.038,
+  "last_val_loss": 3.507,
+  "last_val_step": 200,
+  "train_reports": 20,
+  "val_reports": 2
+}

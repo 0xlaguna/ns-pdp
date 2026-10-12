@@ -1,0 +1,8 @@
+# mlx-lm 0.32 has no --rank flag. --help lists --learning-rate, which both
+# commands pass. Rank lives in lora_parameters, and the study yaml's alpha key
+# is rejected (mlx-lm wants scale). This file is only the rank override for
+# run B. Scale stays at the library default of 20.0 so rank is the only change.
+lora_parameters:
+  rank: 16
+  dropout: 0.0
+  scale: 20.0

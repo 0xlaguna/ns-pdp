@@ -1,0 +1,42 @@
+Loading configuration file configs/mlx-run-b.yaml
+Loading pretrained model
+Fetching 6 files:   0%|          | 0/6 [00:00<?, ?it/s]Fetching 6 files: 100%|██████████| 6/6 [00:00<00:00, 2392.64it/s]
+Loading datasets
+Training
+╭─ [1mmlx_lm.lora[0m ────────────────────────────────────────────────────────────────╮
+│    model           [1mmlx-community/Llama-3.2-1B-Instruct-4bit[0m                  │
+│    type            [1mlora · 8 layers · rank 16[0m                                 │
+│    dataset         [1mdata[0m                                                      │
+│    optimizer       [1madam · lr 1.0e-04[0m                                         │
+│    batch · iters   [1m1 · 200[0m                                                   │
+│    max seq         [1m512[0m                                                       │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Trainable parameters: 0.456% (5.636M/1235.814M)
+  [1miter   train_loss     tok/s     tokens[0m
+     1    [1mval[0m [1m5.788[0m    0.87s
+    10    [1m3.406 ▼[0m    [1m  483[0m      1.1k
+    20    [1m3.043 ▼[0m    [1m  511[0m      2.3k
+    30    [1m2.058 ▼[0m    [1m  515[0m      3.6k
+    40    [1m1.147 ▼[0m    [1m  524[0m      4.7k
+    50    [1m1.122 ▼[0m    [1m  521[0m      5.8k
+    60    [1m0.604 ▼[0m    [1m  508[0m      7.0k
+    70    [1m0.658 ▲[0m    [1m  524[0m      8.1k
+    80    [1m0.392 ▼[0m    [1m  523[0m      9.3k
+    90    [1m0.336 ▼[0m    [1m  510[0m     10.4k
+   100    [1m0.261 ▼[0m    [1m  533[0m     11.6k
+  [1msave[0m  0000100_adapters.safetensors
+   110    [1m0.244 ▼[0m    [1m  515[0m     12.7k
+   120    [1m0.179 ▼[0m    [1m  523[0m     13.9k
+   130    [1m0.109 ▼[0m    [1m  512[0m     15.2k
+   140    [1m0.186 ▲[0m    [1m  523[0m     16.2k
+   150    [1m0.101 ▼[0m    [1m  515[0m     17.5k
+   160    [1m0.099 ▼[0m    [1m  528[0m     18.6k
+   170    [1m0.139 ▲[0m    [1m  519[0m     19.8k
+   180    [1m0.061 ▼[0m    [1m  523[0m     20.9k
+   190    [1m0.074 ▲[0m    [1m  522[0m     22.1k
+   200    [1mval[0m [1m3.608[0m    0.62s
+   200    [1m0.091 ▲[0m    [1m  518[0m     23.2k
+  [1msave[0m  0000200_adapters.safetensors
+[1mtrain[0m ██████████████████████████████ [1m100%[0m · [1m  200[0m/200
+
+EXIT:0
