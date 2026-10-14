@@ -1,0 +1,30 @@
+services:
+  api:
+    build:
+      context: ../..
+      dockerfile: evidence/cloud/docker/rag.Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_URL: redis://redis:6379
+      HF_HOME: /app/data/.cache/huggingface
+    volumes:
+      - ../rag/data:/app/data
+    depends_on:
+      - redis
+  worker:
+    build:
+      context: ../..
+      dockerfile: evidence/cloud/docker/rag.Dockerfile
+    command: ["arq", "worker.WorkerSettings"]
+    environment:
+      REDIS_URL: redis://redis:6379
+      HF_HOME: /app/data/.cache/huggingface
+    volumes:
+      - ../rag/data:/app/data
+    depends_on:
+      - redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
