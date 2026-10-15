@@ -25,19 +25,34 @@ class Pipeline:
 
 
 _pipeline: Pipeline | None = None
+_stamp: tuple[float, float] | None = None
+
+
+def _stamp_now() -> tuple[float, float]:
+    index = ROOT / "data" / "index"
+    chunks = ROOT / "data" / "chunks.jsonl"
+    index_mtime = index.stat().st_mtime if index.exists() else 0.0
+    chunks_mtime = chunks.stat().st_mtime if chunks.exists() else 0.0
+    return (index_mtime, chunks_mtime)
 
 
 def load() -> Pipeline:
-    global _pipeline
-    if _pipeline is not None:
+    global _pipeline, _stamp
+    stamp = _stamp_now()
+    if _pipeline is not None and stamp == _stamp:
         return _pipeline
     rows = load_chunks(ROOT / "data" / "chunks.jsonl")
     lexical = LexicalIndex()
     lexical.fit(rows)
+    old_model = _pipeline.dense.model if _pipeline is not None else None
     dense = DenseIndex.load(ROOT / "data" / "index")
-    dense.load_model()
+    if old_model is not None:
+        dense.model = old_model
+    else:
+        dense.load_model()
     get_model()
     _pipeline = Pipeline(dense=dense, lexical=lexical, chunks=len(rows))
+    _stamp = stamp
     return _pipeline
 
 

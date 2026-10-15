@@ -1,0 +1,5 @@
+The ingest worker does not patch the live index in place. It rebuilds every note in data/raw, writes the next dense and lexical indexes into a sibling directory, and only then publishes that directory. That publish is an atomic index swap: the new directory replaces the live one after the build has succeeded. A failed build leaves the previous index where search already found it.
+
+The same rebuild reads the directory, not a single file. Ingesting one note a second time adds nothing, because the chunk ids come from the file name and the window index. A path that climbs out of data/raw with a parent segment is rejected before any of those files change. The job record then says the attempt failed, and the chunk list stays as it was.
+
+Search keeps serving the old index until the directory mtime changes. The API notices that change and loads the swapped files. The queue can retry the job, and max_tries stays at two, but a retry still rebuilds from the directory rather than appending a second copy of the note. The live directory is the one a search reads. The next directory is disposable until that swap succeeds.

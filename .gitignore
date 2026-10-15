@@ -11,6 +11,10 @@ __pycache__/
 **/adapters/
 **/voices/
 rag/data/index/
+rag/data/index.bak/
+rag/data/index.next/
+rag/data/chunks.jsonl.bak
+rag/data/chunks.jsonl.next
 **/data/jobs/
 
 # mic recordings; the small fixture wavs can still be committed
