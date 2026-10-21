@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Fieldguide</title>
+  <style>
+    body { font-family: Georgia, serif; margin: 2rem; max-width: 46rem; }
+    button, input[type="text"] { font: inherit; }
+    pre { white-space: pre-wrap; border: 1px solid #ccc; min-height: 6rem; padding: 0.75rem; }
+    #status { color: #333; }
+  </style>
+</head>
+<body>
+  <h1>Fieldguide</h1>
+  <p id="status">connecting</p>
+  <p>
+    <input id="text" type="text" size="48" value="What is a cross-encoder? Explain it in two sentences.">
+    <button id="send" type="button">Send</button>
+    <button id="barge" type="button">Barge in</button>
+    <button id="record" type="button">Record</button>
+    <input id="file" type="file" accept="audio/*">
+  </p>
+  <p id="meta"></p>
+  <pre id="out"></pre>
+  <script>
+    let socket;
+    const statusEl = document.querySelector("#status");
+    const out = document.querySelector("#out");
+    const meta = document.querySelector("#meta");
+    const audioCtx = new AudioContext();
+    let chain = Promise.resolve();
+    let sources = [];
+    let stopLocal = false;
+    let sentencesStarted = 0;
+    let transcriptText = "";
+    let recorder = null;
+    let recordChunks = [];
+
+    function connect() {
+      socket = new WebSocket("ws://127.0.0.1:8010/ws");
+      socket.addEventListener("open", () => { statusEl.textContent = "connected"; });
+      socket.addEventListener("error", () => { statusEl.textContent = "connection error"; });
+      socket.addEventListener("close", () => {
+        statusEl.textContent = "disconnected";
+        setTimeout(connect, 400);
+      });
+      socket.addEventListener("message", onMessage);
+    }
+
+    function stopPlayback() {
+      stopLocal = true;
+      for (const source of sources) {
+        try { source.stop(); } catch (_err) { /* already stopped */ }
+      }
+      sources = [];
+      chain = Promise.resolve();
+      statusEl.textContent = "local playback stopped";
+    }
+
+    function enqueueWav(arrayBuffer) {
+      const generation = stopLocal;
+      sentencesStarted += 1;
+      const index = sentencesStarted;
+      chain = chain.then(async () => {
+        if (stopLocal !== generation) return;
+        const decoded = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+        if (stopLocal !== generation) return;
+        if (index > 1 && !meta.textContent.includes("second sentence waited")) {
+          meta.textContent = (meta.textContent + " second sentence waited").trim();
+        }
+        const source = audioCtx.createBufferSource();
+        source.buffer = decoded;
+        source.connect(audioCtx.destination);
+        sources.push(source);
+        await new Promise((resolve) => {
+          source.onended = resolve;
+          source.start();
+        });
+      }).catch((err) => {
+        statusEl.textContent = "audio error: " + err.message;
+      });
+    }
+
+    function onMessage(event) {
+      const message = JSON.parse(event.data);
+      if (message.type === "token") out.textContent += message.text;
+      if (message.type === "transcript") {
+        transcriptText = message.text;
+        meta.textContent = "transcript: " + message.text;
+      }
+      if (message.type === "audio") {
+        const binary = atob(message.wav_b64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+        enqueueWav(bytes.buffer);
+      }
+      if (message.type === "error") statusEl.textContent = message.message;
+      if (message.type === "cancel_audio") meta.textContent = (meta.textContent + " cancel_audio").trim();
+    }
+
+    async function resampleToWav(arrayBuffer) {
+      const decoded = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+      const rate = 16000;
+      const length = Math.max(1, Math.ceil(decoded.duration * rate));
+      const offline = new OfflineAudioContext(1, length, rate);
+      const source = offline.createBufferSource();
+      source.buffer = decoded;
+      source.connect(offline.destination);
+      source.start();
+      const rendered = await offline.startRendering();
+      const pcm = rendered.getChannelData(0);
+      const buffer = new ArrayBuffer(44 + pcm.length * 2);
+      const view = new DataView(buffer);
+      const write = (offset, text) => { for (let i = 0; i < text.length; i += 1) view.setUint8(offset + i, text.charCodeAt(i)); };
+      write(0, "RIFF");
+      view.setUint32(4, 36 + pcm.length * 2, true);
+      write(8, "WAVE");
+      write(12, "fmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, rate, true);
+      view.setUint32(28, rate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      write(36, "data");
+      view.setUint32(40, pcm.length * 2, true);
+      let offset = 44;
+      for (let i = 0; i < pcm.length; i += 1) {
+        const sample = Math.max(-1, Math.min(1, pcm[i]));
+        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+        offset += 2;
+      }
+      return new Uint8Array(buffer);
+    }
+
+    function bytesToB64(bytes) {
+      let binary = "";
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+      }
+      return btoa(binary);
+    }
+
+    async function sendWav(bytes) {
+      if (audioCtx.state === "suspended") await audioCtx.resume();
+      stopLocal = false;
+      out.textContent = "";
+      socket.send(JSON.stringify({ type: "audio", wav_b64: bytesToB64(bytes) }));
+    }
+
+    document.querySelector("#send").addEventListener("click", async () => {
+      if (audioCtx.state === "suspended") await audioCtx.resume();
+      stopLocal = false;
+      out.textContent = "";
+      meta.textContent = "";
+      socket.send(JSON.stringify({ type: "text", text: document.querySelector("#text").value }));
+    });
+
+    document.querySelector("#barge").addEventListener("click", () => {
+      stopPlayback();
+      socket.send(JSON.stringify({ type: "barge_in" }));
+    });
+
+    document.querySelector("#file").addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      try {
+        const wav = await resampleToWav(bytes.buffer);
+        await sendWav(wav);
+        meta.textContent = "sent file";
+      } catch (_err) {
+        await sendWav(bytes);
+        meta.textContent = "sent file bytes";
+      }
+    });
+
+    document.querySelector("#record").addEventListener("click", async () => {
+      if (recorder && recorder.state === "recording") {
+        recorder.stop();
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recordChunks = [];
+        recorder = new MediaRecorder(stream);
+        recorder.addEventListener("dataavailable", (event) => recordChunks.push(event.data));
+        recorder.addEventListener("stop", async () => {
+          stream.getTracks().forEach((track) => track.stop());
+          statusEl.textContent = "connected";
+          const blob = new Blob(recordChunks);
+          const wav = await resampleToWav(await blob.arrayBuffer());
+          await sendWav(wav);
+          meta.textContent = "sent mic";
+        });
+        recorder.start();
+        statusEl.textContent = "recording";
+      } catch (err) {
+        statusEl.textContent = "mic unavailable: " + err.message;
+      }
+    });
+
+    window.fieldguide = { sendWav, resampleToWav };
+    connect();
+  </script>
+</body>
+</html>
